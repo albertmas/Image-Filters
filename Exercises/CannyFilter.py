@@ -15,7 +15,7 @@ def SobelFilter(img):
 
 def SobelFilterSplit(gx, gy):
     G_result = np.sqrt((gx**2 + gy**2))
-    return np.uint8(G_result)
+    return G_result
 
 
 def SobelFilterGx(img):
@@ -88,19 +88,21 @@ def getLines(img_G, directions_G):
     img_M = img_G.copy()
     img_M[:, :] = 0
     rows_M, columns_M = img_M.shape
+    paddedimg = np.zeros((rows_M+2, columns_M+2))
+    paddedimg[1:-1, 1:-1] = img_G
     for x in range(0, rows_M-1):
         for y in range(0, columns_M-1):
             if directions_G[x, y] == 0:
-                if img_G[x, y] > img_G[min(rows_M, x+1), y] & img_G[x, y] > img_G[max(0, x-1), y]:
+                if (img_G[x, y] > paddedimg[x+1+1, y+1]) & (img_G[x, y] > paddedimg[x-1+1, y+1]):
                     img_M[x, y] = img_G[x, y]
             elif directions_G[x, y] == np.pi/4:
-                if img_G[x, y] > img_G[min(rows_M, x+1), max(0, y-1)] & img_G[x, y] > img_G[max(0, x-1), max(columns_M, y+1)]:
+                if (img_G[x, y] > paddedimg[x+1+1, y-1+1]) & (img_G[x, y] > paddedimg[x-1+1, y+1+1]):
                     img_M[x, y] = img_G[x, y]
             elif directions_G[x, y] == np.pi/2:
-                if img_G[x, y] > img_G[x, min(columns_M, y+1)] & img_G[x, y] > img_G[x, max(0, y-1)]:
+                if (img_G[x, y] > paddedimg[x+1, y+1+1]) & (img_G[x, y] > paddedimg[x+1, y-1+1]):
                     img_M[x, y] = img_G[x, y]
             elif directions_G[x, y] == np.pi*3/4:
-                if img_G[x, y] > img_G[min(rows_M, x+1), min(columns_M, y+1)] & img_G[x, y] > img_G[max(0, x-1), max(0, y-1)]:
+                if (img_G[x, y] > paddedimg[x+1+1, y+1+1]) & (img_G[x, y] > paddedimg[x-1+1, y-1+1]):
                     img_M[x, y] = img_G[x, y]
 
     return img_M
@@ -130,14 +132,14 @@ def CannyFilter(img):
     G_img = SobelFilterSplit(Gx, Gy)
     directions = getEdgeDirection(Gx, Gy)
     M_img = getLines(G_img, directions)
-    # M_img_filtered = HysteresisThreshold(M_img, 100, 200)
-    return np.uint8(M_img)
+    M_img_filtered = HysteresisThreshold(M_img, 40, 150)
+    return np.uint8(M_img_filtered)
 
 
 if __name__ == "__main__":
     image = cv2.imread("Sonic.jpg", cv2.IMREAD_GRAYSCALE)
     filteredImg = CannyFilter(image)
     cv2.imshow('Image', np.hstack((image, filteredImg)))
-    # cv2.imwrite('Hermione_Canny.png', filteredImg)
+    cv2.imwrite('Sonic_Canny.png', filteredImg)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

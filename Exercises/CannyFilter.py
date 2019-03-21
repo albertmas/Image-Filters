@@ -8,7 +8,6 @@ def SobelFilter(img):
 
     Gx = applyFilter(img, h_kernel)
     Gy = applyFilter(img, v_kernel)
-
     G_result = np.sqrt((Gx**2 + Gy**2))
 
     return np.uint8(G_result)
@@ -48,7 +47,7 @@ def GaussianFilter(img):
                        [4, 9, 12, 9, 4],
                        [2, 4, 5, 4, 2]), float)
     kernel /= 159
-    return np.uint8(applyFilter(img, kernel))
+    return applyFilter(img, kernel)
 
 
 def applyFilter(img, filter):
@@ -82,7 +81,6 @@ def getEdgeDirection(gx, gy):
                 result[x, y] = np.pi*3/4
             elif abs(abs(result[x, y]) - np.pi) < np.pi/8:
                 result[x, y] = 0
-    result = np.rad2deg(result)
     return result
 
 
@@ -114,14 +112,14 @@ def HysteresisThreshold(img, minimum, maximum):
     for x in range(0, rows):
         for y in range(0, columns):
             if img[x, y] < minimum:
-                img[x, y] = 0
+                newimg[x, y] = 0
             elif img[x, y] > maximum:
-                img[x, y] = 255
+                newimg[x, y] = 255
             else:
                 for a in range(-1, 1):
                     for b in range(-1, 1):
                         if img[x+a, y+b] > maximum:
-                            img[x, y] = 255
+                            newimg[x, y] = 255
     return newimg
 
 
@@ -132,12 +130,12 @@ def CannyFilter(img):
     G_img = SobelFilterSplit(Gx, Gy)
     directions = getEdgeDirection(Gx, Gy)
     M_img = getLines(G_img, directions)
-    M_img_filtered = HysteresisThreshold(M_img, 100, 200)
-    return np.uint8(M_img_filtered)
+    # M_img_filtered = HysteresisThreshold(M_img, 100, 200)
+    return np.uint8(M_img)
 
 
 if __name__ == "__main__":
-    image = cv2.imread("Hermione.jpg", cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("Sonic.jpg", cv2.IMREAD_GRAYSCALE)
     filteredImg = CannyFilter(image)
     cv2.imshow('Image', np.hstack((image, filteredImg)))
     # cv2.imwrite('Hermione_Canny.png', filteredImg)

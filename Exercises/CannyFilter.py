@@ -87,34 +87,53 @@ def getEdgeDirection(gx, gy):
 
 
 def getLines(img_G, directions_G):
-    img_M = np.zeros(img_G)
+    img_M = img_G.copy()
+    img_M[:, :] = 0
     rows_M, columns_M = img_M.shape
-    for x in range(0, rows_M):
-        for y in range(0, columns_M):
+    for x in range(0, rows_M-1):
+        for y in range(0, columns_M-1):
             if directions_G[x, y] == 0:
                 if img_G[x, y] > img_G[min(rows_M, x+1), y] & img_G[x, y] > img_G[max(0, x-1), y]:
                     img_M[x, y] = img_G[x, y]
-            if directions_G[x, y] == np.pi/2:
-                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+            elif directions_G[x, y] == np.pi/4:
+                if img_G[x, y] > img_G[min(rows_M, x+1), max(0, y-1)] & img_G[x, y] > img_G[max(0, x-1), max(columns_M, y+1)]:
                     img_M[x, y] = img_G[x, y]
-            if directions_G[x, y] == np.pi*3/2:
-                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+            elif directions_G[x, y] == np.pi/2:
+                if img_G[x, y] > img_G[x, min(columns_M, y+1)] & img_G[x, y] > img_G[x, max(0, y-1)]:
                     img_M[x, y] = img_G[x, y]
-            if directions_G[x, y] == np.pi*2:
-                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+            elif directions_G[x, y] == np.pi*3/4:
+                if img_G[x, y] > img_G[min(rows_M, x+1), min(columns_M, y+1)] & img_G[x, y] > img_G[max(0, x-1), max(0, y-1)]:
                     img_M[x, y] = img_G[x, y]
 
     return img_M
 
+
+def HysteresisThreshold(img, minimum, maximum):
+    rows, columns = img.shape
+    newimg = np.zeros((rows, columns))
+    for x in range(0, rows):
+        for y in range(0, columns):
+            if img[x, y] < minimum:
+                img[x, y] = 0
+            elif img[x, y] > maximum:
+                img[x, y] = 255
+            else:
+                for a in range(-1, 1):
+                    for b in range(-1, 1):
+                        if img[x+a, y+b] > maximum:
+                            img[x, y] = 255
+    return newimg
+
+
 def CannyFilter(img):
-    newimg = GaussianFilter(img)
-    Gx = SobelFilterGx(newimg)
-    Gy = SobelFilterGy(newimg)
+    blurred = GaussianFilter(img)
+    Gx = SobelFilterGx(blurred)
+    Gy = SobelFilterGy(blurred)
     G_img = SobelFilterSplit(Gx, Gy)
     directions = getEdgeDirection(Gx, Gy)
     M_img = getLines(G_img, directions)
-
-    return newimg
+    M_img_filtered = HysteresisThreshold(M_img, 100, 200)
+    return np.uint8(M_img_filtered)
 
 
 if __name__ == "__main__":

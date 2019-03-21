@@ -1,22 +1,32 @@
 import numpy as np
 import cv2
 
+
 def SobelFilter(img):
-    Gx = SobelFilterGx(img)
-    Gy = SobelFilterGy(img)
+    h_kernel = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    v_kernel = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+
+    Gx = applyFilter(img, h_kernel)
+    Gy = applyFilter(img, v_kernel)
+
     G_result = np.sqrt((Gx**2 + Gy**2))
 
     return np.uint8(G_result)
 
 
+def SobelFilterSplit(gx, gy):
+    G_result = np.sqrt((gx**2 + gy**2))
+    return np.uint8(G_result)
+
+
 def SobelFilterGx(img):
     h_kernel = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
-    return np.uint8(applyFilter(img, h_kernel))
+    return applyFilter(img, h_kernel)
 
 
 def SobelFilterGy(img):
     v_kernel = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-    return np.uint8(applyFilter(img, v_kernel))
+    return applyFilter(img, v_kernel)
 
 
 def ScharrFilter(img):
@@ -32,12 +42,12 @@ def ScharrFilter(img):
 
 
 def GaussianFilter(img):
-    kernel = np.array(([1, 4, 7, 4, 1],
-                       [4, 16, 26, 16, 4],
-                       [7, 26, 41, 26, 7],
-                       [4, 16, 26, 16, 4],
-                       [1, 4, 7, 4, 1]), float)
-    kernel /= 273
+    kernel = np.array(([2, 4, 5, 4, 2],
+                       [4, 9, 12, 9, 4],
+                       [5, 12, 15, 12, 5],
+                       [4, 9, 12, 9, 4],
+                       [2, 4, 5, 4, 2]), float)
+    kernel /= 159
     return np.uint8(applyFilter(img, kernel))
 
 
@@ -55,9 +65,55 @@ def applyFilter(img, filter):
     return newimg
 
 
+def getEdgeDirection(gx, gy):
+    result = np.arctan2(gx, gy)
+    rows, columns = result.shape
+    for x in range(0, rows):
+        for y in range(0, columns):
+            if result[x, y] < 0:
+                result[x, y] += np.pi
+            if abs(result[x, y]) < np.pi/8:
+                result[x, y] = 0
+            elif abs(abs(result[x, y]) - np.pi/4) < np.pi/8:
+                result[x, y] = np.pi/4
+            elif abs(abs(result[x, y]) - np.pi/2) < np.pi/8:
+                result[x, y] = np.pi/2
+            elif abs(abs(result[x, y]) - np.pi*3/4) < np.pi/8:
+                result[x, y] = np.pi*3/4
+            elif abs(abs(result[x, y]) - np.pi) < np.pi/8:
+                result[x, y] = 0
+    result = np.rad2deg(result)
+    return result
+
+
+def getLines(img_G, directions_G):
+    img_M = np.zeros(img_G)
+    rows_M, columns_M = img_M.shape
+    for x in range(0, rows_M):
+        for y in range(0, columns_M):
+            if directions_G[x, y] == 0:
+                if img_G[x, y] > img_G[min(rows_M, x+1), y] & img_G[x, y] > img_G[max(0, x-1), y]:
+                    img_M[x, y] = img_G[x, y]
+            if directions_G[x, y] == np.pi/2:
+                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+                    img_M[x, y] = img_G[x, y]
+            if directions_G[x, y] == np.pi*3/2:
+                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+                    img_M[x, y] = img_G[x, y]
+            if directions_G[x, y] == np.pi*2:
+                if img_G[x, y] > img_G[x-1, y] & img_G[x, y] > img_G[x+1, y]:
+                    img_M[x, y] = img_G[x, y]
+
+    return img_M
+
 def CannyFilter(img):
     newimg = GaussianFilter(img)
-    newimg = SobelFilter(newimg)
+    Gx = SobelFilterGx(newimg)
+    Gy = SobelFilterGy(newimg)
+    G_img = SobelFilterSplit(Gx, Gy)
+    directions = getEdgeDirection(Gx, Gy)
+    M_img = getLines(G_img, directions)
+
     return newimg
 
 

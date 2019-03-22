@@ -90,8 +90,8 @@ def getLines(img_G, directions_G):
     rows_M, columns_M = img_M.shape
     paddedimg = np.zeros((rows_M+2, columns_M+2))
     paddedimg[1:-1, 1:-1] = img_G
-    for x in range(0, rows_M-1):
-        for y in range(0, columns_M-1):
+    for x in range(0, rows_M):
+        for y in range(0, columns_M):
             if directions_G[x, y] == 0:
                 if (img_G[x, y] > paddedimg[x+1+1, y+1]) & (img_G[x, y] > paddedimg[x-1+1, y+1]):
                     img_M[x, y] = img_G[x, y]
@@ -127,19 +127,25 @@ def HysteresisThreshold(img, minimum, maximum):
 
 def CannyFilter(img):
     blurred = GaussianFilter(img)
+    # cv2.imshow('blurred', np.uint8(blurred))
     Gx = SobelFilterGx(blurred)
+    # cv2.imshow('Gx', np.uint8(Gx))
     Gy = SobelFilterGy(blurred)
+    # cv2.imshow('Gy', np.uint8(Gy))
     G_img = SobelFilterSplit(Gx, Gy)
+    # cv2.imshow('G', np.uint8(G_img))
     directions = getEdgeDirection(Gx, Gy)
+    # cv2.imshow('direc', np.uint8(np.rad2deg(directions)))
     M_img = getLines(G_img, directions)
-    M_img_filtered = HysteresisThreshold(M_img, 40, 150)
+    # cv2.imshow('M', np.uint8(M_img))
+    M_img_filtered = HysteresisThreshold(M_img, 30, 50)
     return np.uint8(M_img_filtered)
 
 
 if __name__ == "__main__":
-    image = cv2.imread("Sonic.jpg", cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("Machine.png", cv2.IMREAD_GRAYSCALE)
     filteredImg = CannyFilter(image)
     cv2.imshow('Image', np.hstack((image, filteredImg)))
-    cv2.imwrite('Sonic_Canny.png', filteredImg)
+    # cv2.imwrite('Machine_Canny.png', filteredImg)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

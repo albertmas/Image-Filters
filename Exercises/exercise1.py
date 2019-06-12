@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def ErosionFilter(img, times=1):
@@ -56,15 +56,23 @@ def DilatePixel(img, i, j):
     return 0
 
 
-if __name__ == "__main__":
-    image = cv2.imread("binary.png", cv2.IMREAD_GRAYSCALE)
-    filteredImg = DilationFilter(image, 1)
-    filteredImg = ErosionFilter(filteredImg, 6)
-    # cv2.imshow('Image', np.hstack((image, filteredImg)))
-    cv2.imshow('Original', image)
-    cv2.imshow('Filtered', filteredImg)
-    # filteredImg = DilationFilter(image, 2)
-    # filteredImg = ErosionFilter(filteredImg, 10)
-    # cv2.imshow('Filtered1', filteredImg)
+def exercise1():
+	# Original image
+    img = cv2.imread("binary.png", cv2.IMREAD_GRAYSCALE)
+    rows, cols = img.shape
+	
+	# Destination image
+    img2 = np.zeros((rows, cols), dtype=np.uint8)
+
+	# TODO: Insert your code here
+    img2 = DilationFilter(img)
+    img2 = ErosionFilter(img2, 6)
+	# Show output
+    cv2.imshow("Binary", img)
+    cv2.imshow("Binary 2", img2)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    pass
+
+
+if __name__ == '__main__':
+    exercise1()
